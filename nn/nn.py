@@ -106,7 +106,20 @@ class NeuralNetwork:
             Z_curr: ArrayLike
                 Current layer linear transformed matrix.
         """
-        pass
+        Z_curr = np.dot(W_curr * A_prev) + b_curr
+
+        activation_functions = ['sigmoid', 'relu']
+
+        if activation not in activation_functions:
+            raise(KeyError('Invalid Activation Fucntion'))
+        
+        if activation == 'sigmoid':
+            A_curr = self._sigmoid(Z_curr)
+        else:
+            A_curr = self._relu(Z_curr)
+
+        return Z_curr, A_curr
+
 
     def forward(self, X: ArrayLike) -> Tuple[ArrayLike, Dict[str, ArrayLike]]:
         """
@@ -122,7 +135,28 @@ class NeuralNetwork:
             cache: Dict[str, ArrayLike]:
                 Dictionary storing Z and A matrices from `_single_forward` for use in backprop.
         """
-        pass
+        A = X
+        cache = {}
+
+        num_layers = len(self.arch)
+
+        for i in range(1, num_layers + 1):
+            #Get layer values
+            A_prev = A
+            activation = self.arch[i]['activation']
+            W_curr = self._param_dict['W' + str(i)]
+            b_curr = self._param_dict['b' + str(i)]
+
+            #Do a single foward for layer i
+            Z, A = self._single_forward(W_curr, b_curr, A_prev, activation)
+
+            #save to cache
+            cache[str(i)] = (Z, A)
+
+        output = A
+        
+        return output, cache
+
 
     def _single_backprop(
         self,
@@ -245,7 +279,9 @@ class NeuralNetwork:
             nl_transform: ArrayLike
                 Activation function output.
         """
-        pass
+        nl_transform = 1 / (1 + np.exp(-Z))
+
+        return nl_transform
 
     def _sigmoid_backprop(self, dA: ArrayLike, Z: ArrayLike):
         """
@@ -261,7 +297,12 @@ class NeuralNetwork:
             dZ: ArrayLike
                 Partial derivative of current layer Z matrix.
         """
-        pass
+        A = self._sigmoid(Z)
+
+        dZ = A * (1 - A) * dA
+
+        return dA
+
 
     def _relu(self, Z: ArrayLike) -> ArrayLike:
         """
@@ -275,7 +316,9 @@ class NeuralNetwork:
             nl_transform: ArrayLike
                 Activation function output.
         """
-        pass
+        nl_transform = np.maximum(0,Z)
+
+        return nl_transform
 
     def _relu_backprop(self, dA: ArrayLike, Z: ArrayLike) -> ArrayLike:
         """
@@ -291,7 +334,12 @@ class NeuralNetwork:
             dZ: ArrayLike
                 Partial derivative of current layer Z matrix.
         """
-        pass
+
+        A = self._relu(Z)
+
+        dZ = (A > 0) * 1 * dA
+
+        return dZ
 
     def _binary_cross_entropy(self, y: ArrayLike, y_hat: ArrayLike) -> float:
         """
@@ -307,7 +355,15 @@ class NeuralNetwork:
             loss: float
                 Average loss over mini-batch.
         """
-        pass
+        num_pred = len(y_hat)
+
+        #Calculate loss using the binary cross entropy loss equation in two steps
+        loss = -(np.dot(y,np.log(y_hat)) + np.dot(1 - y, np.log(1 - y_hat)))
+        loss = loss / num_pred
+
+        return loss
+
+
 
     def _binary_cross_entropy_backprop(self, y: ArrayLike, y_hat: ArrayLike) -> ArrayLike:
         """
@@ -323,7 +379,12 @@ class NeuralNetwork:
             dA: ArrayLike
                 partial derivative of loss with respect to A matrix.
         """
-        pass
+
+        num_pred = len(y_hat)
+
+        dA = -1/num_pred * (y/y_hat - (1 - y)/(1 - y_hat))
+
+        return dA
 
     def _mean_squared_error(self, y: ArrayLike, y_hat: ArrayLike) -> float:
         """
@@ -339,7 +400,11 @@ class NeuralNetwork:
             loss: float
                 Average loss of mini-batch.
         """
-        pass
+        num_pred = len(y_hat)
+
+        loss = (y - y_hat)**2 / num_pred
+
+        return loss
 
     def _mean_squared_error_backprop(self, y: ArrayLike, y_hat: ArrayLike) -> ArrayLike:
         """
@@ -355,4 +420,8 @@ class NeuralNetwork:
             dA: ArrayLike
                 partial derivative of loss with respect to A matrix.
         """
-        pass
+        num_pred = len(y_hat)
+
+        dA = -2/num_pred * (y - y_hat)
+
+        return dA
