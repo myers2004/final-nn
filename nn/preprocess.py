@@ -2,6 +2,7 @@
 import numpy as np
 from typing import List, Tuple
 from numpy.typing import ArrayLike
+import random
 
 def sample_seqs(seqs: List[str], labels: List[bool]) -> Tuple[List[str], List[bool]]:
     """
@@ -20,14 +21,48 @@ def sample_seqs(seqs: List[str], labels: List[bool]) -> Tuple[List[str], List[bo
         sampled_labels: List[bool]
             List of labels for the sampled sequences
     """
-
+    #First let's find how many of each type we have
     pos_label_count = labels.count(True)
     neg_label_count = labels.count(False)
 
-    
+    #We want the max number of data points, while at the same time having balenced class sizes
+    # To acheive this, randomly sample with replacement from both classes the same number of times
+
+    #Get index of true and false postions
+    pos_index = [] 
+    neg_index = []
+    for i in len(labels):
+        if labels[i] == True:
+            pos_index.append(i)
+        else:
+            neg_index.append(i)
+
+    sampling_rounds = 200
+
+    sampled_seqs = []
+    sampled_labels = []
+
+    #Sample both postive and negative with replacement
+    sampled_pos_idxs = np.random.choice(pos_index, sampling_rounds, replace= True)
+    sampled_neg_idxs = np.random.choice(neg_index, sampling_rounds, replace= True)
 
 
-    pass
+    #Add the sampled data points to the sampled lists
+    for idx in sampled_pos_idxs:
+        sampled_seqs.append(seqs[idx])
+        sampled_labels.append(labels[idx])
+    for idx in sampled_neg_idxs:
+        sampled_seqs.append(seqs[idx])
+        sampled_labels.append(labels[idx])
+
+    #Shuffle the sampled seqs, maintaining the same order across sampled_seqs and sampled_labels
+    # to prevent any bias in order
+    zipped = list(zip(sampled_seqs, sampled_labels))
+    random.shuffle(zipped)
+    sampled_seqs, sampled_labels = zip(*zipped)
+
+    return sampled_seqs, sampled_labels
+
 
 def one_hot_encode_seqs(seq_arr: List[str]) -> ArrayLike:
     """
