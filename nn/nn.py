@@ -141,7 +141,7 @@ class NeuralNetwork:
                 Dictionary storing Z and A matrices from `_single_forward` for use in backprop.
         """
         #Start with the inputs
-        A = X
+        A = X.T
         cache = {}
 
         #Save the input layer to cache
@@ -219,7 +219,7 @@ class NeuralNetwork:
 
         #Calculate the dW and dB for the current layer and dA for the previos
         dW_curr = np.dot(dZ_curr, A_prev.T)
-        db_curr = dZ_curr
+        db_curr = np.sum(dZ_curr, axis =1, keepdims=True)
         dA_prev = np.dot(W_curr.T, dZ_curr)
 
         return dA_prev, dW_curr, db_curr
@@ -253,7 +253,7 @@ class NeuralNetwork:
         #Need to first get the error fucntion gradient for the output layer
         output = cache['A' + str(num_layers)]
 
-        if self._loss_func == 'BSE':
+        if self._loss_func == 'BCE':
             dA_curr = self._binary_cross_entropy_backprop(y, y_hat)
         else:
             dA_curr = self._mean_squared_error_backprop(y, y_hat)
@@ -296,9 +296,9 @@ class NeuralNetwork:
 
         #Update W and b for each layer
         for i in range(1, num_layers + 1):
-            self._param_dict['W' + str(i)] = self._param_dict['W' + str(i)] - self._lr * (1/m * grad_dict['dW' + str(i)])
+            self._param_dict['W' + str(i)] = self._param_dict['W' + str(i)] - self._lr * (1/m) * grad_dict['dW' + str(i)]
 
-            self._param_dict['b' + str(i)] = self._param_dict['b' + str(i)] - self._lr * (1/m * grad_dict['db' + str(i)])
+            self._param_dict['b' + str(i)] = self._param_dict['b' + str(i)] - self._lr * (1/m) * grad_dict['db' + str(i)]
 
     def fit(
         self,
@@ -331,7 +331,7 @@ class NeuralNetwork:
         per_epoch_loss_val = []
 
         #Check the correct batch size is specified
-        if np.shape(X_train)[1] != self._batch_size:
+        if np.shape(X_train)[0] != self._batch_size:
             raise(IndexError('Input data does not match specified batch size'))
 
         #Check for valid loss function
@@ -349,15 +349,15 @@ class NeuralNetwork:
             y_hat_val, cache_val = self.forward(X_val)
 
             #Calculate the loss for the training and validation set
-            if self._loss_func == 'BSE':
+            if self._loss_func == 'BCE':
 
                 loss_train = self._binary_cross_entropy(y_train, y_hat_train)
-                loss_val = self._binary_cross_entropy(y_train, y_hat_val)
+                loss_val = self._binary_cross_entropy(y_val, y_hat_val)
             
             else:
 
                 loss_train = self._mean_squared_error(y_train, y_hat_train)
-                loss_val = self._mean_squared_error(y_train, y_hat_val)
+                loss_val = self._mean_squared_error(y_val, y_hat_val)
 
             #Backpropagate the training set and use it to update weights and bias
             grad_dict_train = self.backprop(y_train, y_hat_train, cache_train)
@@ -386,7 +386,7 @@ class NeuralNetwork:
 
         y_hat, cache = self.forward(X)
 
-        return y_hat
+        return y_hat.T
 
     def _sigmoid(self, Z: ArrayLike) -> ArrayLike:
         """
@@ -418,9 +418,8 @@ class NeuralNetwork:
             dZ: ArrayLike
                 Partial derivative of current layer Z matrix.
         """
-        A = self._sigmoid(Z)
 
-        dZ = A * (1 - A) * dA
+        dZ = self._sigmoid(Z) * (1 - self._sigmoid(Z)) * dA
 
         return dZ
 
@@ -476,12 +475,9 @@ class NeuralNetwork:
             loss: float
                 Average loss over mini-batch.
         """
-        num_pred = len(y_hat)
 
-        #Calculate loss using the binary cross entropy loss equation in two steps
-        # Done in the same way as loggistic regression
-        loss = -(np.dot(y,np.log(y_hat)) + np.dot(1 - y, np.log(1 - y_hat)))
-        loss = loss / num_pred
+        #Calculate loss using the binary cross entropy
+        loss = -(1 / self._batch_size) * np.sum(y * np.log(y_hat) + (1 - y) * np.log(1 - y_hat))
 
         return loss
 
@@ -502,9 +498,7 @@ class NeuralNetwork:
                 partial derivative of loss with respect to A matrix.
         """
 
-        num_pred = len(y_hat)
-
-        dA = -1/num_pred * (y/y_hat - (1 - y)/(1 - y_hat))
+        dA = -1/ self._batch_size * np.divide(y - y_hat, y_hat * (1 - y_hat))
 
         return dA
 
@@ -522,9 +516,8 @@ class NeuralNetwork:
             loss: float
                 Average loss of mini-batch.
         """
-        num_pred = len(y_hat)
 
-        loss = (y - y_hat)**2 / num_pred
+        loss = np.sum((y - y_hat)**2) / self._batch_size
 
         return loss
 
@@ -542,8 +535,7 @@ class NeuralNetwork:
             dA: ArrayLike
                 partial derivative of loss with respect to A matrix.
         """
-        num_pred = len(y_hat)
 
-        dA = -2/num_pred * (y - y_hat)
+        dA = -2.0/self._batch_size * (y - y_hat)
 
         return dA
