@@ -1,5 +1,7 @@
 # Final project: neural network
 
+[![Build Status](https://github.com/myers2004/final-nn/actions/workflows/test.yml/badge.svg?event=push)](https://github.com/myers2004/final-nn/actions/workflows/test.yml)
+
 ## Overview
 
 In this assignment, you will implement a neural network class from (almost) scratch. You will then apply your class to create both:
