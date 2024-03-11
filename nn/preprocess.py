@@ -31,13 +31,13 @@ def sample_seqs(seqs: List[str], labels: List[bool]) -> Tuple[List[str], List[bo
     #Get index of true and false postions
     pos_index = [] 
     neg_index = []
-    for i in len(labels):
+    for i in range(len(labels)):
         if labels[i] == True:
             pos_index.append(i)
         else:
             neg_index.append(i)
 
-    sampling_rounds = 200
+    sampling_rounds = 1000
 
     sampled_seqs = []
     sampled_labels = []
@@ -84,18 +84,28 @@ def one_hot_encode_seqs(seq_arr: List[str]) -> ArrayLike:
             Then, AGA -> [1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0].
     """
 
-    encodings = []
+    encodings = np.zeros((len(seq_arr), len(seq_arr[0] * 4)))
 
-    allowed_bases = ['A', 'T', 'C', 'G']
+    allowed_bases = ['A', 'T', 'C', 'G', 'P']
 
     one_hot_key = {'A' : [1,0,0,0],
                    'T' : [0,1,0,0],
                    'C' : [0,0,1,0],
-                   'G' : [0,0,0,1]}
+                   'G' : [0,0,0,1],
+                   'P' : [0,0,0,0]}
 
-    for base in seq_arr:
-        if base not in allowed_bases:
-            raise(KeyError('Non allowed base' + base + 'in sequences'))
-        encodings.extend(one_hot_key[base])
+    for i in range(len(seq_arr)):
+        curr_seq = seq_arr[i]
+        curr_one_hot_encode = []
+        for base in curr_seq:
+            curr_one_hot_encode.extend(one_hot_key[base])
+        encodings[i] = curr_one_hot_encode
 
+    #for seq in seq_arr:
+     #   curr_encoding = []
+      #  for base in seq:
+       #     if base not in allowed_bases:
+        #        raise(KeyError('Non allowed base' + base + 'in sequences'))
+         #   curr_encoding.extend(one_hot_key[base])
+        #encodings.append(curr_encoding)
     return encodings
