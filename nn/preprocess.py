@@ -25,8 +25,7 @@ def sample_seqs(seqs: List[str], labels: List[bool]) -> Tuple[List[str], List[bo
     pos_label_count = labels.count(True)
     neg_label_count = labels.count(False)
 
-    #We want the max number of data points, while at the same time having balenced class sizes
-    # To acheive this, randomly sample with replacement from both classes the same number of times
+    #Randomly sample with replacement from both classes the same number of times
 
     #Get index of true and false postions
     pos_index = [] 
@@ -37,7 +36,7 @@ def sample_seqs(seqs: List[str], labels: List[bool]) -> Tuple[List[str], List[bo
         else:
             neg_index.append(i)
 
-    sampling_rounds = 1000
+    sampling_rounds = 3000
 
     sampled_seqs = []
     sampled_labels = []
@@ -91,8 +90,7 @@ def one_hot_encode_seqs(seq_arr: List[str]) -> ArrayLike:
     one_hot_key = {'A' : [1,0,0,0],
                    'T' : [0,1,0,0],
                    'C' : [0,0,1,0],
-                   'G' : [0,0,0,1],
-                   'P' : [0,0,0,0]}
+                   'G' : [0,0,0,1]}
 
     for i in range(len(seq_arr)):
         curr_seq = seq_arr[i]
@@ -100,12 +98,5 @@ def one_hot_encode_seqs(seq_arr: List[str]) -> ArrayLike:
         for base in curr_seq:
             curr_one_hot_encode.extend(one_hot_key[base])
         encodings[i] = curr_one_hot_encode
-
-    #for seq in seq_arr:
-     #   curr_encoding = []
-      #  for base in seq:
-       #     if base not in allowed_bases:
-        #        raise(KeyError('Non allowed base' + base + 'in sequences'))
-         #   curr_encoding.extend(one_hot_key[base])
-        #encodings.append(curr_encoding)
+    
     return encodings
